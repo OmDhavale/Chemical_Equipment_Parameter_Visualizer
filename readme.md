@@ -93,7 +93,7 @@ Follow these steps in order to get the full system running.
 
 Start by cloning the repository to your local machine and navigating into the project folder.
 
-git clone \[<https://github.com/your-username/chemviz-pro.git\>](<https://github.com/your-username/chemviz-pro.git>)  
+git clone \[<https://github.com/OmDhavale/Chemical_Equipment_Parameter_Visualizer.git>](<https://github.com/OmDhavale/Chemical_Equipment_Parameter_Visualizer.git>)  
 cd chemviz-pro  
 
 ### 1\. Backend Setup
@@ -235,3 +235,4 @@ To stop the application safely:
 - **Web Client:** Click inside the React terminal and press Ctrl + C.
 - **Backend:** Click inside the Django terminal and press Ctrl + C.
 - **Desktop Client:** Simply close the application window.
+
