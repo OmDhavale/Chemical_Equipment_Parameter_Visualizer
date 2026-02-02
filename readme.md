@@ -41,7 +41,7 @@ The system uses a centralized backend to ensure data consistency across both cli
            │ REST API (JWT)  
            ▼  
 ┌──────────────────────┐  
-│ Django Backend │  
+│ Django Backend       |  
 │ (DRF + Pandas + PDF) │  
 └──────────────────────┘  
            ▲  
@@ -234,5 +234,6 @@ To stop the application safely:
 - **Web Client:** Click inside the React terminal and press Ctrl + C.
 - **Backend:** Click inside the Django terminal and press Ctrl + C.
 - **Desktop Client:** Simply close the application window.
+
 
 
