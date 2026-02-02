@@ -97,7 +97,7 @@ cd chemviz-pro
 
 ### 1\. Backend Setup
 
-_Location: CEPV/backend_
+_Location: Chemical_Equipment_Parameter_Visualizer/backend_
 
 - **Create a virtual environment:**
     ```bash  
@@ -126,7 +126,7 @@ _Location: CEPV/backend_
 
 ### 2\. Frontend (Web) Setup
 
-_Location: CEPV/frontend_
+_Location: Chemical_Equipment_Parameter_Visualizer/frontend_
 
 - **Open a new terminal** and navigate to the frontend directory.
 - **Install dependencies:**
@@ -140,7 +140,7 @@ _Location: CEPV/frontend_
 
 ### 3\. Desktop App Setup
 
-_Location: CEPV/desktop-app_
+_Location: Chemical_Equipment_Parameter_Visualizer/desktop-app_
 
 - **Open a new terminal** and navigate to the desktop app directory.
 - **Activate the shared Python virtual environment:**
@@ -234,6 +234,7 @@ To stop the application safely:
 - **Web Client:** Click inside the React terminal and press Ctrl + C.
 - **Backend:** Click inside the Django terminal and press Ctrl + C.
 - **Desktop Client:** Simply close the application window.
+
 
 
 
