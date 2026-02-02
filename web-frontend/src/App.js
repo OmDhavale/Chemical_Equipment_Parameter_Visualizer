@@ -3,7 +3,8 @@ import axios from "axios";
 import {
   Container, Typography, Box, Button, Card, Grid,
   Paper, AppBar, Toolbar, Avatar, CircularProgress, Fade,
-  IconButton, Divider, Stack, Tooltip as MuiTooltip
+  IconButton, Divider, Stack, Tooltip as MuiTooltip,
+  Grow
 } from "@mui/material";
 import { styled } from '@mui/material/styles';
 import HistoryIcon from '@mui/icons-material/History';
@@ -120,6 +121,13 @@ const [password, setPassword] = useState("");
 const [loginLoading, setLoginLoading] = useState(false);
 const [loginError, setLoginError] = useState("");
 
+const fetchHistory = async () => {
+    try {
+      const res = await axios.get("http://127.0.0.1:8000/api/history/");
+      setHistory(res.data);
+    } catch (err) { setHistory([]); }
+  };
+
   //login
 const handleLogin = async () => {
   setLoginLoading(true);
@@ -133,6 +141,7 @@ const handleLogin = async () => {
 
     localStorage.setItem("token", res.data.access);
     setIsAuthenticated(true);
+    await fetchHistory();
   } catch (err) {
     setLoginError("Invalid username or password");
   }
@@ -150,12 +159,7 @@ const logout = () => {
 
   useEffect(() => { fetchHistory(); }, []);
 
-  const fetchHistory = async () => {
-    try {
-      const res = await axios.get("http://127.0.0.1:8000/api/history/");
-      setHistory(res.data);
-    } catch (err) { setHistory([]); }
-  };
+  
 
   const uploadFile = async () => {
     if (!file) return;
@@ -164,18 +168,31 @@ const logout = () => {
     formData.append("file", file);
     try {
       const res = await axios.post("http://127.0.0.1:8000/api/upload/", formData);
+      
+      // 1. Set result
       setResult(res.data);
+      
+      // 2. Clear selected history so the UI looks at 'result'
       setSelectedHistory(null);
+      
+      // 3. Refresh history in the background
       fetchHistory();
-    } catch (err) { setResult({ error: "Upload failed" }); }
+    } catch (err) { 
+      setResult({ error: "Upload failed" }); 
+    }
     setLoading(false);
   };
 
-  const activeData = selectedHistory || result;
-  const summaryData = activeData ? activeData.summary : null;
-  const activeId = selectedHistory ? selectedHistory.id : (result ? result.id : null);
-  const activeName = selectedHistory ? selectedHistory.name : (result ? result.name : "report");
+  //const activeData = selectedHistory || result;
+  const summaryData = selectedHistory 
+    ? selectedHistory.summary 
+    : (result?.summary || result); 
+
+  const activeId = selectedHistory?.id || result?.id;
   
+  // Fallback name if the upload response doesn't include the filename
+  const activeName = selectedHistory?.name || result?.name || "New Analysis Report";
+
   const pieData = summaryData?.type_distribution ? {
     labels: Object.keys(summaryData.type_distribution),
     datasets: [{
@@ -448,48 +465,56 @@ return (
           </GlassCard>
         )}
 
-        {/* 4. History Section (Bottom) */}
+        {/* 4. History Section with Staggered Animation */}
         <Box sx={{ mt: 6 }}>
-          <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 3 }}>
-            <HistoryIcon sx={{ color: '#6366f1' }} />
-            <Typography variant="h6" sx={{ fontWeight: 900, color: '#1e293b' }}>Recent Reports</Typography>
-          </Stack>
+          <Fade in={true} timeout={1000}>
+            <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 3 }}>
+              <HistoryIcon sx={{ color: '#6366f1' }} />
+              <Typography variant="h6" sx={{ fontWeight: 900, color: '#1e293b' }}>Recent Reports</Typography>
+            </Stack>
+          </Fade>
           
-          <Grid container spacing={3}>
+          <Grid container spacing={1}>
             {history.map((item, idx) => (
-              <Grid item xs={12} sm={6} md={3} key={idx}>
-                <GlassCard 
-                  selected={selectedHistory && selectedHistory.id === item.id} 
-                  onClick={() => setSelectedHistory(item)} 
-                  sx={{ cursor: 'pointer', p: 3, position: 'relative' }}
-                >
-                  {/* Download Action for History Item */}
-                  <MuiTooltip title="Download PDF Report">
-                    <IconButton 
-                      size="small" 
-                      onClick={(e) => downloadPDF(item.id, item.name, e)}
-                      sx={{ position: 'absolute', top: 12, right: 12, color: '#94a3b8', '&:hover': { color: '#6366f1' } }}
-                    >
-                      <DownloadIcon fontSize="small" />
-                    </IconButton>
-                  </MuiTooltip>
+              <Grow 
+                in={true} 
+                key={item.id || idx} // Ensure unique key is here
+                style={{ transformOrigin: '0 0 0' }}
+                {...(true ? { timeout: 800 + (idx * 200) } : {})} // Staggered delay logic
+              >
+                <Grid item xs={12} sm={6} md={3}>
+                  <GlassCard 
+                    selected={selectedHistory && selectedHistory.id === item.id} 
+                    onClick={() => setSelectedHistory(item)} 
+                    sx={{ cursor: 'pointer', p: 3, position: 'relative' }}
+                  >
+                    <MuiTooltip title="Download PDF Report">
+                      <IconButton 
+                        size="small" 
+                        onClick={(e) => downloadPDF(item.id, item.name, e)}
+                        sx={{ position: 'absolute', top: 12, right: 12, color: '#94a3b8', '&:hover': { color: '#6366f1' } }}
+                      >
+                        <DownloadIcon fontSize="small" />
+                      </IconButton>
+                    </MuiTooltip>
 
-                  <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 2 }}>
-                    <Box sx={{ width: 40, height: 40, borderRadius: '12px', bgcolor: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <CloudUploadIcon sx={{ fontSize: 20, color: '#64748b' }} />
-                    </Box>
-                    <Typography variant="caption" sx={{ fontWeight: 700, color: '#6366f1', bgcolor: '#eef2ff', px: 1, py: 0.5, borderRadius: 1, mr: 4 }}>
-                      {new Date(item.uploaded_at).toLocaleDateString()}
+                    <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 2 }}>
+                      <Box sx={{ width: 40, height: 40, borderRadius: '12px', bgcolor: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <CloudUploadIcon sx={{ fontSize: 20, color: '#64748b' }} />
+                      </Box>
+                      <Typography variant="caption" sx={{ fontWeight: 700, color: '#6366f1', bgcolor: '#eef2ff', px: 1, py: 0.5, borderRadius: 1, mr: 4 }}>
+                        {new Date(item.uploaded_at).toLocaleDateString()}
+                      </Typography>
+                    </Stack>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#1e293b', mb: 0.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {item.name}
                     </Typography>
-                  </Stack>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#1e293b', mb: 0.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {item.name}
-                  </Typography>
-                  <Typography variant="caption" sx={{ color: '#94a3b8' }}>
-                    Samples: {item.summary?.count}
-                  </Typography>
-                </GlassCard>
-              </Grid>
+                    <Typography variant="caption" sx={{ color: '#94a3b8' }}>
+                      Samples: {item.summary?.count}
+                    </Typography>
+                  </GlassCard>
+                </Grid>
+              </Grow>
             ))}
           </Grid>
         </Box>

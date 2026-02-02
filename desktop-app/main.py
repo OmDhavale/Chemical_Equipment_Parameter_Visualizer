@@ -10,7 +10,7 @@ from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
 from PyQt6.QtWidgets import QLineEdit
-
+from PyQt6.QtWidgets import QDialog
 
 API_BASE = "http://127.0.0.1:8000/api"
 
@@ -161,7 +161,7 @@ class ModernStatBox(QFrame):
         layout.addWidget(self.val)
 
 
-class LoginDialog(QWidget):
+class LoginDialog(QDialog):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Login – ChemViz Pro")
@@ -198,8 +198,51 @@ class LoginDialog(QWidget):
         layout.addWidget(self.status)
 
         self.token = None
+        self.loading = False
 
+
+    # def login(self):
+    #     try:
+    #         res = requests.post(
+    #             "http://127.0.0.1:8000/api/token/",
+    #             json={
+    #                 "username": self.username.text(),
+    #                 "password": self.password.text()
+    #             },
+    #             timeout=5
+    #         )
+
+    #         if res.status_code == 200:
+    #             self.token = res.json()["access"]
+    #             self.accept()
+    #         else:
+    #             self.status.setText("Invalid credentials")
+
+    #     except Exception:
+    #         self.status.setText("Server unavailable")
+
+    def set_loading(self, is_loading: bool):
+        self.loading = is_loading
+        self.login_btn.setDisabled(is_loading)
+
+        if is_loading:
+            self.login_btn.setText("Logging in...")
+            self.status.setText("")
+        else:
+            self.login_btn.setText("Login")
+
+        
     def login(self):
+        if self.loading:
+            return
+
+        if not self.username.text().strip() or not self.password.text().strip():
+            self.status.setText("Please enter username and password")
+            return
+
+        self.set_loading(True)
+        QApplication.processEvents()  # force UI repaint
+
         try:
             res = requests.post(
                 "http://127.0.0.1:8000/api/token/",
@@ -212,13 +255,17 @@ class LoginDialog(QWidget):
 
             if res.status_code == 200:
                 self.token = res.json()["access"]
-                self.close()
+                self.accept()   # ✅ CORRECT WAY
+                return
             else:
                 self.status.setText("Invalid credentials")
 
         except Exception:
             self.status.setText("Server unavailable")
-    
+
+        self.set_loading(False)
+
+
 class ChemVizDesktop(QWidget):
     def __init__(self, token):
         super().__init__()
@@ -242,7 +289,7 @@ class ChemVizDesktop(QWidget):
     
     def logout(self):
         self.close()
-        QApplication.quit()
+
 
     def init_ui(self):
         main_layout = QVBoxLayout(self)
@@ -503,13 +550,11 @@ class ChemVizDesktop(QWidget):
 if __name__ == "__main__":
     app = QApplication(sys.argv)
 
-    login = LoginDialog()
-    login.show()
-    app.exec()
+    while True:
+        login = LoginDialog()
+        if login.exec() != QDialog.DialogCode.Accepted:
+            sys.exit()
 
-    if not login.token:
-        sys.exit()
-
-    window = ChemVizDesktop(login.token)
-    window.show()
-    sys.exit(app.exec())
+        window = ChemVizDesktop(login.token)
+        window.show()
+        app.exec()
