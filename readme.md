@@ -5,7 +5,6 @@
 **ChemViz Pro** is a full-stack analytics application designed to visualize and analyze operational parameters of chemical equipment. It demonstrates a unified architecture where a single **Django REST Framework** backend serves both a modern **React Web Dashboard** and a native **PyQt6 Desktop Application**.
 
 ## 📌 Table of Contents
-## 📌 Table of Contents
 - [Project Overview](#-project-overview)
 - [System Architecture](#-system-architecture)
 - [Tech Stack](#-tech-stack)
@@ -235,4 +234,5 @@ To stop the application safely:
 - **Web Client:** Click inside the React terminal and press Ctrl + C.
 - **Backend:** Click inside the Django terminal and press Ctrl + C.
 - **Desktop Client:** Simply close the application window.
+
 
