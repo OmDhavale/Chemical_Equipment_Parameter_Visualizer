@@ -105,7 +105,7 @@ _Location: CEPV/backend_
 
 - **Activate the virtual environment (Windows):**
     ```bash
-    venv\\Scripts\\activate  
+    venv\Scripts\activate  
 
 - **Install backend dependencies:**
     ```bash  
@@ -234,6 +234,7 @@ To stop the application safely:
 - **Web Client:** Click inside the React terminal and press Ctrl + C.
 - **Backend:** Click inside the Django terminal and press Ctrl + C.
 - **Desktop Client:** Simply close the application window.
+
 
 
 
