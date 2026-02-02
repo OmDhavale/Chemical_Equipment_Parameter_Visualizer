@@ -126,7 +126,7 @@ _Location: Chemical_Equipment_Parameter_Visualizer/backend_
 
 ### 2\. Frontend (Web) Setup
 
-_Location: Chemical_Equipment_Parameter_Visualizer/frontend_
+_Location: Chemical_Equipment_Parameter_Visualizer/web-frontend_
 
 - **Open a new terminal** and navigate to the frontend directory.
 - **Install dependencies:**
@@ -234,6 +234,7 @@ To stop the application safely:
 - **Web Client:** Click inside the React terminal and press Ctrl + C.
 - **Backend:** Click inside the Django terminal and press Ctrl + C.
 - **Desktop Client:** Simply close the application window.
+
 
 
 
