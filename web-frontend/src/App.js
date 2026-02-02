@@ -17,6 +17,18 @@ import { Pie, Bar } from 'react-chartjs-2';
 
 Chart.register(ArcElement, BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
+axios.interceptors.request.use(config => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// login function to obtain JWT token
+
+
+
 // --- Styled Components ---
 
 const GlassCard = styled(Card)(({ theme, selected }) => ({
@@ -91,12 +103,50 @@ const IconUploadButton = styled(IconButton)({
   }
 });
 
+
 function App() {
   const [file, setFile] = useState(null);
   const [result, setResult] = useState(null);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedHistory, setSelectedHistory] = useState(null);
+
+  //LOGIN
+  const [isAuthenticated, setIsAuthenticated] = useState(
+  !!localStorage.getItem("token")
+);
+const [username, setUsername] = useState("");
+const [password, setPassword] = useState("");
+const [loginLoading, setLoginLoading] = useState(false);
+const [loginError, setLoginError] = useState("");
+
+  //login
+const handleLogin = async () => {
+  setLoginLoading(true);
+  setLoginError("");
+
+  try {
+    const res = await axios.post(
+      "http://127.0.0.1:8000/api/token/",
+      { username, password }
+    );
+
+    localStorage.setItem("token", res.data.access);
+    setIsAuthenticated(true);
+  } catch (err) {
+    setLoginError("Invalid username or password");
+  }
+
+  setLoginLoading(false);
+};
+//LOGOUT
+const logout = () => {
+  localStorage.removeItem("token");
+  setIsAuthenticated(false);
+  setResult(null);
+  setSelectedHistory(null);
+};
+
 
   useEffect(() => { fetchHistory(); }, []);
 
@@ -183,7 +233,68 @@ function App() {
     }
   };
 
+  if (!isAuthenticated) {
   return (
+    <Box
+      sx={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "#f8faff",
+      }}
+    >
+      <GlassCard sx={{ p: 5, width: 380 }}>
+        <Stack spacing={3}>
+          <Typography variant="h5" sx={{ fontWeight: 900, textAlign: "center" }}>
+            ChemViz <span style={{ color: "#6366f1" }}>Login</span>
+          </Typography>
+
+          <input
+            placeholder="Username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            style={{
+              padding: 12,
+              borderRadius: 10,
+              border: "1px solid #e2e8f0",
+              fontSize: 14,
+            }}
+          />
+
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            style={{
+              padding: 12,
+              borderRadius: 10,
+              border: "1px solid #e2e8f0",
+              fontSize: 14,
+            }}
+          />
+
+          {loginError && (
+            <Typography color="error" variant="body2">
+              {loginError}
+            </Typography>
+          )}
+
+          <GradientButton onClick={handleLogin} disabled={loginLoading}>
+            {loginLoading ? (
+              <CircularProgress size={20} color="inherit" />
+            ) : (
+              "Login"
+            )}
+          </GradientButton>
+        </Stack>
+      </GlassCard>
+    </Box>
+  );
+}
+return (
+
     <Box sx={{ 
       background: "#f8faff", 
       minHeight: '100vh',
@@ -204,6 +315,10 @@ function App() {
             <Typography variant="h5" sx={{ fontWeight: 900, letterSpacing: -0.5, flexGrow: 1 }}>
               ChemViz <span style={{ color: '#6366f1' }}>Pro</span>
             </Typography>
+            <OutlineButton onClick={logout}>
+  Logout
+</OutlineButton>
+
           </Toolbar>
         </AppBar>
       </Container>

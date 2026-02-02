@@ -9,6 +9,9 @@ from PyQt6.QtCore import Qt
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
+from PyQt6.QtWidgets import QLineEdit
+
+
 API_BASE = "http://127.0.0.1:8000/api"
 
 # --- Styling Config ---
@@ -157,9 +160,69 @@ class ModernStatBox(QFrame):
         layout.addWidget(self.lbl)
         layout.addWidget(self.val)
 
-class ChemVizDesktop(QWidget):
+
+class LoginDialog(QWidget):
     def __init__(self):
         super().__init__()
+        self.setWindowTitle("Login – ChemViz Pro")
+        self.setFixedSize(350, 230)
+        self.setStyleSheet(STYLESHEET)
+
+        layout = QVBoxLayout(self)
+        layout.setSpacing(15)
+
+        title = QLabel("ChemViz <span style='color:#6366f1;'>Login</span>")
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        title.setStyleSheet("font-size: 20px; font-weight: 900;")
+        layout.addWidget(title)
+
+        self.username = QLineEdit()
+        self.username.setPlaceholderText("Username")
+        self.username.setStyleSheet("color: black;")
+        layout.addWidget(self.username)
+
+        self.password = QLineEdit()
+        self.password.setPlaceholderText("Password")
+        self.password.setStyleSheet("color: black;")
+        self.password.setEchoMode(QLineEdit.EchoMode.Password)
+        layout.addWidget(self.password)
+
+        self.login_btn = QPushButton("Login")
+        self.login_btn.setObjectName("PrimaryBtn")
+        self.login_btn.clicked.connect(self.login)
+        layout.addWidget(self.login_btn)
+
+        self.status = QLabel("")
+        self.status.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.status.setStyleSheet("color: red;")
+        layout.addWidget(self.status)
+
+        self.token = None
+
+    def login(self):
+        try:
+            res = requests.post(
+                "http://127.0.0.1:8000/api/token/",
+                json={
+                    "username": self.username.text(),
+                    "password": self.password.text()
+                },
+                timeout=5
+            )
+
+            if res.status_code == 200:
+                self.token = res.json()["access"]
+                self.close()
+            else:
+                self.status.setText("Invalid credentials")
+
+        except Exception:
+            self.status.setText("Server unavailable")
+    
+class ChemVizDesktop(QWidget):
+    def __init__(self, token):
+        super().__init__()
+        self.token = token
         self.setWindowTitle("ChemViz Pro")
         self.setMinimumSize(1100, 800)
         self.setStyleSheet(STYLESHEET)
@@ -172,6 +235,15 @@ class ChemVizDesktop(QWidget):
         self.init_ui()
         self.fetch_history()
 
+    def auth_headers(self):
+        return {
+            "Authorization": f"Bearer {self.token}"
+        }
+    
+    def logout(self):
+        self.close()
+        QApplication.quit()
+
     def init_ui(self):
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(40, 30, 40, 30)
@@ -183,7 +255,12 @@ class ChemVizDesktop(QWidget):
         title.setStyleSheet("font-size: 24px; font-weight: 900; color: #1e293b;")
         header.addWidget(title)
         header.addStretch()
-        
+        logout_btn = QPushButton("Logout")
+        logout_btn.setObjectName("SecondaryBtn")
+        logout_btn.clicked.connect(self.logout)
+        header.addWidget(logout_btn)
+
+
         self.history_dropdown = QComboBox()
         self.history_dropdown.setFixedWidth(250)
         self.history_dropdown.currentIndexChanged.connect(self.load_history_item)
@@ -248,7 +325,12 @@ class ChemVizDesktop(QWidget):
 
     def fetch_history(self):
         try:
-            res = requests.get(f"{API_BASE}/history/", timeout=5)
+            res = requests.get(
+                f"{API_BASE}/history/",
+                headers=self.auth_headers(),
+                timeout=5
+            )
+
             if res.status_code == 200:
                 self.history = res.json()
                 self.history_dropdown.clear()
@@ -275,7 +357,12 @@ class ChemVizDesktop(QWidget):
 
         try:
             with open(self.current_file_path, "rb") as f:
-                response = requests.post(f"{API_BASE}/upload/", files={"file": f}, timeout=15)
+                response = requests.post(
+                    f"{API_BASE}/upload/",
+                    files={"file": f},
+                    headers=self.auth_headers(),
+                    timeout=15
+                )
             
             if response.status_code in [200, 201]:
                 res_json = response.json()
@@ -311,8 +398,12 @@ class ChemVizDesktop(QWidget):
         if file_path:
             try:
                 url = f"{API_BASE}/report/{self.current_dataset_id}/"
-                response = requests.get(url, stream=True)
-                
+                response = requests.get(
+                    url,
+                    headers=self.auth_headers(),
+                    stream=True
+                )
+
                 if response.status_code == 200:
                     with open(file_path, 'wb') as f:
                         for chunk in response.iter_content(chunk_size=8192):
@@ -411,6 +502,14 @@ class ChemVizDesktop(QWidget):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    window = ChemVizDesktop()
+
+    login = LoginDialog()
+    login.show()
+    app.exec()
+
+    if not login.token:
+        sys.exit()
+
+    window = ChemVizDesktop(login.token)
     window.show()
     sys.exit(app.exec())

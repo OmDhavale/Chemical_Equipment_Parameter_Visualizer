@@ -18,14 +18,18 @@ import matplotlib.pyplot as plt
 from .models import Dataset
 from reportlab.platypus import TableStyle
 from reportlab.lib import colors
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import permission_classes
 
 class HistoryView(APIView):
+    @permission_classes([IsAuthenticated])
     def get(self, request):
         datasets = Dataset.objects.order_by('-uploaded_at')[:5]
         serializer = DatasetSerializer(datasets, many=True)
         return Response(serializer.data)
 
 class UploadCSVView(APIView):
+    @permission_classes([IsAuthenticated])
     def post(self, request):
         file = request.FILES.get('file')
         if not file:
@@ -56,7 +60,8 @@ class UploadCSVView(APIView):
 
         return Response(summary, status=status.HTTP_201_CREATED)
 
-def generate_pdf_report(request, dataset_id):
+@permission_classes([IsAuthenticated])
+def generate_pdf_report(request, dataset_id):  
     dataset = Dataset.objects.get(id=dataset_id)
     s = dataset.summary
 
