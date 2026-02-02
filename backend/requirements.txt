@@ -5,3 +5,4 @@ pandas
 matplotlib
 reportlab
 python-dateutil
+django-cors-headers
